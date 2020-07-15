@@ -58,25 +58,42 @@ class ResolveHandler(ContentHandler):
                 self.title += s
 
 class DBLP:
-    def __init__(self):
+    def __init__(self, path=None):
         self.authors = {}
         self.titles = []
-        self.default_path = 'dblp_index'
+        if path is None:
+            self.path = 'dblp_index'
+        else:
+            self.path = path
+        self.author_file = os.path.join(self.path, 'author.dat')
+        self.title_file = os.path.join(self.path, 'title.dat')
         
-    def load(self, path=None):
-        if not path:
-            path = self.default_path
+    def load(self):
+        if not os.path.exists(self.path):
+            print('Failed to find path ' + self.path)
+            return
+        self.load_authors()
+        self.load_titles()
+        
+    def load_authors(self):
+        path = self.author_file
         if not os.path.exists(path):
-            print('Failed to find path ' + path)
+            print('Failed to find file', path)
             return
         self.authors.clear()
+        print('load authors...', end='', flush=True)
+        self.authors = pickle.load(open(path, 'rb'))
+        print('done')
+    
+    def load_titles(self):
+        path = self.title_file
+        if not os.path.exists(path):
+            print('Failed to find file', path)
+            return
         self.titles.clear()
-        author_path = os.path.join(path, 'author.dat')
-        title_path = os.path.join(path, 'title.dat')
-        print('load index...', end='', flush=True)
-        self.authors = pickle.load(open(author_path, 'rb'))
-        self.titles = pickle.load(open(title_path, 'rb'))
-        print('done.')
+        print('load titles...', end='', flush=True)
+        self.titles = pickle.load(open(path, 'rb'))
+        print('done')
             
     def search(self, author_name):
         titles_and_orders = []
@@ -85,12 +102,18 @@ class DBLP:
                 titles_and_orders.append((self.titles[idx[0]], idx[1]))
         return titles_and_orders
         
-    def creat_index(self, raw_file='dblp.xml', path=None):
+    def create_index(self, raw_file='dblp.xml', path=None):
+        if os.path.exists(self.author_file) and os.path.exists(self.title_file):
+            print('Already have the files ['+ self.author_file + ', ' + self.title_file +']', ', directly load them.')
+            self.load()
+            return
         if not os.path.exists(raw_file):
             print(raw_file, 'is not found')
             return
         if not path:
-            path = self.default_path
+            path = self.path
+        else:
+            self.path = path
         if not os.path.exists(path):
             os.makedirs(path)
         author_path = os.path.join(path, 'author.dat')
@@ -99,15 +122,13 @@ class DBLP:
         self.authors.clear()
         self.titles.clear()
         parse(raw_file, ResolveHandler(self.authors, self.titles))
-        print('done.')
-        print('create index ...', end='', flush=True)
-        
+        print('done')
+        print('create index ...', end='', flush=True)  
         f = open(author_path, 'wb')
-        pickle.dump(self.authors, f)
-        
+        pickle.dump(self.authors, f)        
         f = open(title_path, 'wb')
         pickle.dump(self.titles, f)
-        print('done.')
+        print('done')
 
 if __name__ == "__main__":
     dblp = DBLP()

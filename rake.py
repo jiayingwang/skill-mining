@@ -92,7 +92,7 @@ class Rake(object):
         phrase_list = []
         print('generate phrases...', end='', flush=True)
         for sentence in sentences:
-            phrase_list += self._generate_phrases(sentence)
+            phrase_list += self.generate_phrases(sentence)
         phrase_set = set(phrase_list)
         print('done')
         print('build freq...', end='', flush=True)
@@ -177,13 +177,13 @@ class Rake(object):
                     rank += 1.0 * self.degree[word]
                 else:
                     rank += 1.0 * self.frequency_dist[word]
-            true_phrase = "_".join(phrase)
+            true_phrase = " ".join(phrase)
             self.rank_list.append((rank, true_phrase))
             self.phrase_score[true_phrase] = rank
         self.rank_list.sort(reverse=True)
         self.ranked_phrases = [ph[1] for ph in self.rank_list]
 
-    def _generate_phrases(self, sentence):
+    def generate_phrases(self, sentence):
         """Method to generate phrases given the sentences of the text
         document.
 
@@ -192,7 +192,7 @@ class Rake(object):
                  of words forming a phrase.
         """
         sentence = sentence.replace('-', '_')
-        word_list = [word.lower() for word in wordpunct_tokenize(sentence)]
+        word_list = [word.lower().replace('_', '-') for word in wordpunct_tokenize(sentence)]
         phrase_list = self._get_phrase_list_from_words(word_list)
         return phrase_list
 
